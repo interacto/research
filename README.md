@@ -8,6 +8,68 @@ Note that RQ3 and RQ4 have no data.
 
 # Appendix
 
+## Undo history
+
+The next listing details the algorithm of the standard linear undo mechanism:
+
+```ts
+export class UndoHistory {
+    /** The undoable objects. */
+    private readonly undos: Array<Undoable>;
+    /** The redoable objects. */
+    private readonly redos: Array<Undoable>;
+    /** The maximal number of undo. */
+    private sizeMax: number;
+
+    public constructor() {
+        this.sizeMax = 0;
+        this.undos = [];
+        this.redos = [];
+        this.sizeMax = 30;
+    }
+
+    /** Adds an undoable object to the collector. */
+    public add(undoable: Undoable): void {
+        if (this.sizeMax > 0) {
+            // Cleaning the oldest undoable object
+            if (this.undos.length === this.sizeMax) {
+                this.undos.shift();
+            }
+            this.undos.push(undoable);
+            // You must clear the redo stack!
+            this.clearRedo();
+        }
+    }
+
+    private clearRedo(): void {
+        if (this.redos.length > 0) {
+            this.redos.length = 0;
+        }
+    }
+
+    /** Undoes the last undoable object. */
+    public undo(): void {
+        const undoable = this.undos.pop();
+        if (undoable !== undefined) {
+            undoable.undo();
+            this.redos.push(undoable);
+        }
+    }
+
+    /** Redoes the last undoable object. */
+    public redo(): void {
+        const undoable = this.redos.pop();
+        if (undoable !== undefined) {
+            undoable.redo();
+            this.undos.push(undoable);
+        }
+    }
+}
+```
+
+The current linear implementation in Interacto is located here:
+https://github.com/interacto/interacto-ts/blob/master/src/impl/undo/UndoHistoryImpl.ts
+
 ## Interacto user interactions
 
 ## Interacto routines
