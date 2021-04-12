@@ -72,6 +72,12 @@ https://github.com/interacto/interacto-ts/blob/master/src/impl/undo/UndoHistoryI
 
 ## Interacto user interactions
 
+The following picture illustrates how a touch-DnD interaction (ie a DnD interaction but using a touchpad instead of a mouse).
+A multi-touch interaction involves several instances of this touch-DnD interaction in parallel.
+
+<img src="pic/touchDnD.png" alt="touchDnD" width="500"/>
+
+
 ## Interacto routines
 
 We detail additional details related to the Interacto API.
