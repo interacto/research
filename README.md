@@ -1,4 +1,12 @@
 
+This companion web page contains additional data related to the TSE paper:
+- [Details on the data for replication](#data-for-replication)
+- [Algorithmic details on the linear undo history](#undo-history)
+- [Details on and examples of user interactions](#interacto-user-interactions)
+- [Details on Interacto routines](#interacto-routines)
+- [Examples of code produced by subjects in RQ5](#rq5-code-examples)
+
+
 # Data for replication
 
 The different folders of this repository contain data related to a research question (RQ).
@@ -6,9 +14,7 @@ The different folders of this repository contain data related to a research ques
 Note that RQ3 and RQ4 have no data.
 
 
-# Appendix
-
-## Undo history
+# Undo history
 
 The next listing details the algorithm of the standard linear undo mechanism:
 
@@ -70,7 +76,8 @@ export class UndoHistory {
 The current linear implementation in Interacto is located here:
 https://github.com/interacto/interacto-ts/blob/master/src/impl/undo/UndoHistoryImpl.ts
 
-## Interacto user interactions
+
+# Interacto user interactions
 
 The following picture illustrates how a touch-DnD interaction (ie a DnD interaction but using a touchpad instead of a mouse).
 A multi-touch interaction involves several instances of this touch-DnD interaction in parallel.
@@ -78,7 +85,8 @@ A multi-touch interaction involves several instances of this touch-DnD interacti
 <img src="pic/touchDnD.png" alt="touchDnD" width="500"/>
 
 
-## Interacto routines
+
+# Interacto routines
 
 We detail additional details related to the Interacto API.
 
@@ -185,3 +193,257 @@ binder()...
   .log(LogLevel.INTERACTION)
   .bind();
 ```
+
+# RQ5 code examples
+
+All the code produced by the subjects is located in the archive `RQ5/subjects-data.tar.xz`.
+We give here some illustrative examples of interesting solutions.
+
+## G1 - Interacto
+
+Interacto code that configures Interacto bindings for the three tasks (from subject 11 in G1):
+
+```ts
+export class Tp2Component implements AfterViewInit {
+  @ViewChild("triple")
+  private triple: ElementRef;
+  @ViewChild("undoButton")
+  private undoButton: ElementRef;
+  @ViewChild("redoButton")
+  private redoButton: ElementRef;
+  @ViewChild("text")
+  private text: ElementRef;
+  @ViewChild("rec")
+  private rec: ElementRef;
+  private click: boolean = false;
+  @ViewChild("canvas")
+  private canvas: ElementRef;
+
+  constructor(public dataService: DataService) {
+    dataService;
+  }
+
+  ngAfterViewInit(): void {
+    buttonBinder()
+      .toProduce(() => new Undo())
+      .on(this.undoButton.nativeElement)
+      .bind();
+
+    buttonBinder()
+      .toProduce(() => new Redo())
+      .on(this.redoButton.nativeElement)
+      .bind();
+
+    clicksBinder(3)
+      .on(this.triple.nativeElement)
+      .toProduce(() => new RandomColor(this.dataService))
+      .bind();
+
+    textInputBinder()
+      .on(this.text.nativeElement)
+      .toProduce(() => new AnonCmd(
+          () => (this.dataService.text = this.text.nativeElement.value)))
+      .bind();
+
+    dndBinder(true)
+      // The command to produce
+      .toProduce(() => new MoveRectangle(this.dataService))
+      // What to do when the interaction starts
+      .first((c: MoveRectangle, i: SrcTgtTouchData) => {
+        // Note that i refers to the current data of the DnD.
+        // See the class diagram of SrcTgtTouchData above.
+        // And c refers to the ongoing command that can be updated here
+        c._x = i.getTgtClientX() - 50 -
+          this.canvas.nativeElement.getBoundingClientRect().left;
+        c._y = i.getTgtClientY() - 25 -
+          this.canvas.nativeElement.getBoundingClientRect().top;
+      })
+      // What to do when the interaction updates
+      .then((c: MoveRectangle, i: SrcTgtTouchData) => {
+        // The values of 'i' change on each change of the DnD
+        c._x = i.getTgtClientX() - 50 -
+          this.canvas.nativeElement.getBoundingClientRect().left;
+        c._y = i.getTgtClientY() - 25 -
+          this.canvas.nativeElement.getBoundingClientRect().top;
+      })
+      // When the interaction stops
+      .end((c: MoveRectangle, i: SrcTgtTouchData) => {
+        c._x = i.getTgtClientX() - 50 -
+          this.canvas.nativeElement.getBoundingClientRect().left;
+        c._y = i.getTgtClientY() - 25 -
+          this.canvas.nativeElement.getBoundingClientRect().top;
+      })
+      // On which widget the interaction operates
+      .on(this.rec.nativeElement)
+      // continuous execution means that the command is executed each time the interaction updates
+      .continuousExecution()
+      .bind();
+  }
+}
+```
+
+An example of a valid Interacto command (from the same subject 11):
+
+```ts
+export class MoveRectangle extends CommandBase implements Undoable {
+  private mementoX: number;
+  private mementoY: number;
+  public _x: number;
+  public _y: number;
+
+  public constructor(private dataService: DataService) {
+    super();
+  }
+
+  protected execution(): void {
+    this.dataService.position.x = this._x;
+    this.dataService.position.y = this._y;
+  }
+
+  undo(): void {
+    this.dataService.position.x = this.mementoX;
+    this.dataService.position.y = this.mementoY;
+  }
+  redo(): void {
+    this.execution();
+  }
+  getUndoName(): string {
+    return "Move Rectangle";
+  }
+
+  createMemento() {
+    this.mementoX = this.dataService.position.x;
+    this.mementoY = this.dataService.position.y;
+  }
+}
+```
+
+
+## G2 - Native Angular
+
+Native Angular code for the three tasks (from subject 17 in G2):
+
+```ts
+export class Tp2Component implements AfterViewInit {
+    textAreaChanged: Subject<string> = new Subject<string>();
+    textAreaText: string;
+
+    private startedPos: Position;
+    private startedScreenPosition;
+
+    constructor(public dataService: DataService, private history: HistoryService) {
+        this.textAreaChanged
+            .pipe(debounceTime(1000), distinctUntilChanged())
+            .subscribe(model => {
+                this.dataService.text = model;
+            });
+    }
+
+    ngAfterViewInit(): void {
+    }
+
+    onTripleClickButton($event: MouseEvent) {
+        if ($event.detail % 3 === 0) {
+            this.history.execute(new ColorCommand(this.dataService, this.dataService.color, this.dataService.generateRandomColor()));
+        }
+    }
+
+    undo() {
+        this.history.undo();
+    }
+
+    redo() {
+        this.history.redo();
+    }
+
+    onTextAreaChange(query: string) {
+        this.textAreaChanged.next(query);
+    }
+
+    dragDropped() {
+        console.log(this.startedPos, this.dataService.position);
+    }
+
+    dragStarted() {
+        this.startedPos = this.dataService.position;
+    }
+
+    onMouseUp($event: MouseEvent) {
+        const oldPos = {x: this.startedPos.x, y: this.startedPos.y};
+        console.log($event);
+        const diffX = $event.screenX - this.startedScreenPosition.x;
+        const diffY = $event.screenY - this.startedScreenPosition.y;
+        this.startedPos.x += diffX;
+        this.startedPos.y += diffY;
+        console.log(this.startedPos);
+        this.history.execute(new DragCommand(this.dataService, oldPos, this.startedPos));
+    }
+
+    onMouseDown($event: MouseEvent) {
+        this.startedPos = this.dataService.position;
+        this.startedScreenPosition = {x: $event.screenX, y: $event.screenY};
+    }
+}
+```
+
+This subject coded himself/herself an undo history and the base classes for commands:
+
+```ts
+@Injectable({
+    providedIn: 'root'
+})
+export class HistoryService {
+
+    private undoables: Command[] = [];
+    private redoables: Command[] = [];
+
+    constructor() {
+    }
+
+    execute(command: Command) {
+        if (command.apply()) {
+            this.undoables.push(command);
+            this.redoables = [];
+            return true;
+        }
+
+        return false;
+    }
+
+    undo() {
+        if (this.undoables.length !== 0) {
+            const command = this.undoables.pop();
+            command.revert();
+            this.redoables.push(command);
+        }
+    }
+
+    redo() {
+        if (this.redoables.length !== 0) {
+            const command = this.redoables.pop();
+            command.apply();
+            this.undoables.push(command);
+        }
+    }
+}
+```
+
+An example of a command produced by the same subject:
+
+```ts
+export class DragCommand implements Command {
+    constructor(private dataService: DataService, private oldPos: Position, private newPos: Position) {
+    }
+
+    apply(): boolean {
+        this.dataService.position = this.newPos;
+        return true;
+    }
+
+    revert(): boolean {
+        this.dataService.position = this.oldPos;
+        return true;
+    }
+
+}
+  ```
