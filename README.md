@@ -76,6 +76,7 @@ export class UndoHistory {
 The current linear implementation in Interacto is located here:
 https://github.com/interacto/interacto-ts/blob/master/src/impl/undo/UndoHistoryImpl.ts
 
+<br/><br/>
 
 # Interacto user interactions
 
@@ -84,7 +85,13 @@ A multi-touch interaction involves several instances of this touch-DnD interacti
 
 <img src="pic/touchDnD.png" alt="touchDnD" width="500"/>
 
+<br/>
+The next pictures gives the list of implemented user interactions per platform:
 
+<img src="pic/interactions.png" alt="interactions" width="500" />
+
+
+<br/><br/>
 
 # Interacto routines
 
