@@ -80,15 +80,34 @@ https://github.com/interacto/interacto-ts/blob/master/src/impl/undo/UndoHistoryI
 
 # Interacto user interactions
 
+## FSM example
+
 The following picture illustrates how a touch-DnD interaction (ie a DnD interaction but using a touchpad instead of a mouse).
 A multi-touch interaction involves several instances of this touch-DnD interaction in parallel.
 
 <img src="pic/touchDnD.png" alt="touchDnD" width="500"/>
 
-<br/>
-The next pictures gives the list of implemented user interactions per platform:
+
+## User interaction table
+
+The next picture gives the list of implemented user interactions per platform:
 
 <img src="pic/interactions.png" alt="interactions" width="500" />
+
+
+## Coding a new user interaction
+
+The next links point to classes that show how the very simple 'button clicked' user interaction is coded.
+It illustrates the work to do for supporting new UI events or creating new user interactions.
+
+The transition [ButtonPressedTransition](https://github.com/interacto/interacto-ts/blob/master/src/impl/fsm/ButtonPressedTransition.ts) defines an FSM transition for the button event. This class identifies UI events that the transition can accept. It also checks that a button produced the UI event.
+
+The FSM [ButtonPressedFSM](https://github.com/interacto/interacto-ts/blob/master/src/impl/interaction/library/ButtonPressed.ts#L27) uses this transition.
+
+The user interaction [ButtonPressed](https://github.com/interacto/interacto-ts/blob/master/src/impl/interaction/library/ButtonPressed.ts#L57) uses this FSM. On FSM updates, the user interaction updates its data (see `initToPressedHandler`).
+
+The user interaction data [WidgetData](https://github.com/interacto/interacto-ts/blob/master/src/impl/interaction/WidgetDataImpl.ts) defines data produced by WIMP widgets. Most of WIMP widgets use this interaction data class.
+
 
 
 <br/><br/>
