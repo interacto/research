@@ -18,4 +18,19 @@ This repository contains 'companion web pages' of the different research papers 
 ```
 
 
-- [A Type System for User Interactions, preprint](EICS2024/)
+- [A Type System for User Interactions, Proc. of the ACM HCI, EICS Series, 2024, pp. 27](EICS2024/)
+
+```bibtex
+@article{blouin:hal-04485762,
+  TITLE = {{A Type System for Flexible User Interactions Handling}},
+  AUTHOR = {Blouin, Arnaud},
+  URL = {https://inria.hal.science/hal-04485762},
+  JOURNAL = {{Proceedings of the ACM on Human-Computer Interaction }},
+  PUBLISHER = {{Association for Computing Machinery (ACM)}},
+  SERIES = {EICS},
+  PAGES = {27},
+  YEAR = {2024},
+  PDF = {https://inria.hal.science/hal-04485762/file/main.pdf},
+}
+
+```
